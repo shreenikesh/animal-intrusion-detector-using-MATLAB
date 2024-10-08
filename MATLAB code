@@ -1,0 +1,49 @@
+setpref('Internet', 'SMTP_Password', '**** **** **** ****);  % Use the generated password
+ setpref('Internet', 'E_mail', 'xxxxxxxxxx@gmail.com');  % Replace with your email
+setpref('Internet', 'SMTP_Server', 'smtp.gmail.com');
+setpref('Internet', 'SMTP_Username', 'xxxxxxxx@gmail.com');  % Replace with your email
+setpref('Internet', 'SMTP_Password', '**** **** **** ****');  % Use your generated password
+
+% Additional properties for sending mail via Gmail
+props = java.lang.System.getProperties;
+props.setProperty('mail.smtp.auth', 'true');
+props.setProperty('mail.smtp.starttls.enable', 'true');
+props.setProperty('mail.smtp.port', '587');
+
+load('E:\OBJECT_DETECTION_USING_PYTHON_3_9\matlab\trainedFasterRCNNDetector.mat', 'detector');
+
+% Read the image
+img = imread('E:\download.jpeg');
+
+% Resize the image to ensure it's at least 224x224
+img_resized = imresize(img, [224 224]);
+
+% Perform object detection
+[bboxes, scores, labels] = detect(detector, img_resized);
+
+% Check the output
+disp(bboxes);  % Display bounding boxes
+disp(scores);  % Display detection scores
+disp(labels);  % Display detected labels
+
+% Perform detection with a lower threshold
+[bboxes, scores, labels] = detect(detector, img_resized, 'Threshold', 0.3);  % Set a lower threshold
+
+% Check if any animals are detected
+if ~isempty(bboxes)
+    % Annotate the detected objects in the image
+    detectedImg = insertObjectAnnotation(img_resized, 'rectangle', bboxes, cellstr(labels));
+    imshow(detectedImg);
+    disp('Animal is detected');
+    % Save the annotated image for sending via email
+    imwrite(detectedImg, 'detected_animal.jpg');
+    
+    % Send an email alert
+    sendmail('shreenikeshvenkates@gmail.com', ...  % Replace with the recipient's email
+             'Animal Detected Alert', ...       % Subject of the email
+             'An animal has been detected in the field. Please check the attached image.', ...  % Email body
+             'detected_animal.jpg');            % Attach the annotated image
+
+else
+    disp('No animals detected.');
+end
